@@ -11,8 +11,7 @@
 [string[]]$exclusionList = Get-Content ".\ExcludeMFACheck.txt"
 
 # get all users in the specified OU and all sub-OUs
-[Microsoft.ActiveDirectory.Management.ADUser[]]$users = 
-Get-ADUser -Filter * -SearchBase $ou -SearchScope $searchScope -Properties MemberOf | Sort-Object Name 
+[Microsoft.ActiveDirectory.Management.ADUser[]]$users = Get-ADUser -Filter * -SearchBase $ou -SearchScope $searchScope -Properties MemberOf | Sort-Object Name 
 
 # Check if a user is missing MFA
 function CheckIfUserIsMissingMFA([Microsoft.ActiveDirectory.Management.ADUser]$user) {
