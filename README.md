@@ -1,4 +1,4 @@
-#Powershell Scripts
+# Powershell Scripts
 
 This GitHub repo contains a collection of PowerShell scripts that I've developed to automate various tasks in Active Directory and other areas of IT administration.
 
@@ -10,4 +10,4 @@ to the directory containing the script, then run the script using the PowerShell
 If you find a bug or have an idea for a new feature, feel free to open an issue on GitHub or submit a pull request with your changes.
 License
 
-This project is licensed under the MIT License.
+This project is licensed under the **[MIT License](https://opensource.org/licenses/MIT)**.
