@@ -8,6 +8,5 @@ To use the scripts, simply download the repo and extract the contents to a direc
 to the directory containing the script, then run the script using the PowerShell command line.
 
 If you find a bug or have an idea for a new feature, feel free to open an issue on GitHub or submit a pull request with your changes.
-License
 
 This project is licensed under the **[MIT License](https://opensource.org/licenses/MIT)**.
