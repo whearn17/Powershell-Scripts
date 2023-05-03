@@ -1,5 +1,6 @@
+#Powershell Scripts
+
 This GitHub repo contains a collection of PowerShell scripts that I've developed to automate various tasks in Active Directory and other areas of IT administration.
-Prerequisites
 
 These scripts require PowerShell version 5.1 or later, and the Active Directory PowerShell module to be installed on the system running the scripts.
 
