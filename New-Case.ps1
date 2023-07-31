@@ -7,7 +7,8 @@ $caseDirectories = @(
 "Sharepoint_Onedrive",
 "Raven",
 "MFA",
-"Compromised_Files_Export"
+"Compromised_Files_Export",
+"Exchange_Permissions"
 )
 
 Write-Host "Enter Case Name: " -NoNewline
