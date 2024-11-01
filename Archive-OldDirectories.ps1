@@ -3,9 +3,9 @@
     Automatically compresses and archives old directories using 7-Zip.
 
 .DESCRIPTION
-    This script identifies directories that haven't been modified in the last 180 days,
+    This script identifies directories that haven't been modified in the last specified number of days,
     compresses them using 7-Zip, and removes the original directories after successful compression.
-    It includes error handling and logging of all operations.
+    It only processes directories in the current working directory.
 
 .PARAMETER DaysOld
     The minimum age in days for directories to be considered for archiving. Defaults to 180.
@@ -35,7 +35,6 @@ param (
     [string]$SevenZipPath = "C:\Program Files\7-Zip\7z.exe"
 )
 
-# Import common functions
 function Write-LogMessage {
     param (
         [string]$Message,
@@ -71,18 +70,14 @@ function Get-OldDirectories {
         [int]$DaysOld
     )
     
+    $currentLocation = Get-Location
+    Write-LogMessage "Scanning directory: $currentLocation" -Type "Info"
+    
     $cutoffDate = (Get-Date).AddDays(-$DaysOld)
-    $oldDirectories = Get-ChildItem -Directory | 
-        Where-Object { $_.LastWriteTime -lt $cutoffDate }
+    $oldDirectories = Get-ChildItem -Path $currentLocation -Directory | 
+    Where-Object { $_.LastWriteTime -lt $cutoffDate }
     
     Write-LogMessage "Found $($oldDirectories.Count) directories older than $DaysOld days"
-    
-    if ($oldDirectories.Count -gt 0) {
-        $oldDirectories | 
-            Select-Object FullName, LastWriteTimeUtc | 
-            Sort-Object LastWriteTimeUtc | 
-            Format-Table
-    }
     
     return $oldDirectories
 }
@@ -93,6 +88,8 @@ function Compress-Directory {
         [string]$ArchivePath,
         [string]$SevenZipPath
     )
+    
+    Write-LogMessage "Creating archive: $ArchivePath" -Type "Info"
     
     $arguments = @(
         "a"             # Add to archive
@@ -115,6 +112,13 @@ function Remove-OriginalDirectory {
     )
     
     if (Test-Path $ArchivePath) {
+        $archiveInfo = Get-Item $ArchivePath
+        $directoryInfo = Get-Item $DirectoryPath
+        if ($archiveInfo.Length -eq 0) {
+            Write-LogMessage "Archive file is empty - skipping directory removal: $ArchivePath" -Type "Error"
+            return $false
+        }
+        
         Remove-Item -Path $DirectoryPath -Recurse -Force
         Write-LogMessage "Removed original directory: $DirectoryPath" -Type "Success"
         return $true
@@ -143,21 +147,23 @@ function Start-ArchivingProcess {
     
     foreach ($directory in $oldDirectories) {
         try {
-            Write-LogMessage "Processing: $($directory.FullName)"
-            $archivePath = "$($directory.FullName).7z"
+            Write-LogMessage "Processing: $($directory.Name)"
             
-            $exitCode = Compress-Directory -SourcePath $directory.FullName -ArchivePath $archivePath -SevenZipPath $SevenZipPath
+            $directoryPath = $directory.FullName
+            $archivePath = Join-Path -Path (Get-Location) -ChildPath "$($directory.Name).7z"
+            
+            $exitCode = Compress-Directory -SourcePath $directoryPath -ArchivePath $archivePath -SevenZipPath $SevenZipPath
             
             if ($exitCode -eq 0) {
-                Write-LogMessage "Successfully compressed directory: $($directory.FullName)" -Type "Success"
-                Remove-OriginalDirectory -DirectoryPath $directory.FullName -ArchivePath $archivePath
+                Write-LogMessage "Successfully compressed directory: $($directory.Name)" -Type "Success"
+                Remove-OriginalDirectory -DirectoryPath $directoryPath -ArchivePath $archivePath
             }
             else {
                 Write-LogMessage "7-Zip returned error code: $exitCode" -Type "Error"
             }
         }
         catch {
-            Write-LogMessage "Failed to process directory: $($directory.FullName)" -Type "Error"
+            Write-LogMessage "Failed to process directory: $($directory.Name)" -Type "Error"
             Write-LogMessage "Error: $($_.Exception.Message)" -Type "Error"
         }
     }
