@@ -91,6 +91,9 @@ function Compress-Directory {
     
     Write-LogMessage "Creating archive: $ArchivePath" -Type "Info"
     
+    # Add \\?\ prefix to source path for long path support
+    $longPathSource = "\\?\$SourcePath"
+    
     $arguments = @(
         "a"             # Add to archive
         "-t7z"          # Use 7z format
@@ -98,7 +101,7 @@ function Compress-Directory {
         "-mmt=on"       # Enable multithreading
         "-r"            # Include subdirectories recursively
         "`"$ArchivePath`""
-        "`"$SourcePath\*`""
+        "`"$longPathSource\*`""
     )
     
     $process = Start-Process -FilePath $SevenZipPath -ArgumentList $arguments -NoNewWindow -Wait -PassThru
@@ -119,9 +122,18 @@ function Remove-OriginalDirectory {
             return $false
         }
         
-        Remove-Item -Path $DirectoryPath -Recurse -Force
-        Write-LogMessage "Removed original directory: $DirectoryPath" -Type "Success"
-        return $true
+        # Add \\?\ prefix for long path support
+        $longPathDirectory = "\\?\$DirectoryPath"
+        try {
+            Remove-Item -Path $longPathDirectory -Recurse -Force
+            Write-LogMessage "Removed original directory: $DirectoryPath" -Type "Success"
+            return $true
+        }
+        catch {
+            Write-LogMessage "Failed to remove directory: $DirectoryPath" -Type "Error"
+            Write-LogMessage "Error: $($_.Exception.Message)" -Type "Error"
+            return $false
+        }
     }
     else {
         Write-LogMessage "Archive file not found - skipping directory removal: $ArchivePath" -Type "Warning"
