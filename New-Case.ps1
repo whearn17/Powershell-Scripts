@@ -1,14 +1,16 @@
 $caseDirectories = @(
-"Azure_Export",
-"Working_Tree",
-"Mailbox_Export",
-"Message_Trace",
-"Hawk",
-"Sharepoint_Onedrive",
-"Raven",
-"MFA",
-"Compromised_Files_Export",
-"Exchange_Permissions"
+    "Audit",
+    "Azure_Export",
+    "Working_Tree",
+    "Mailbox_Export",
+    "Message_Trace",
+    "Hawk",
+    "MFA",
+    "Email_Export",
+    "Exchange_Permissions",
+    "Viper",
+    "Malware",
+    "Inbox_Rules"
 )
 
 Write-Host "Enter Case Name: " -NoNewline

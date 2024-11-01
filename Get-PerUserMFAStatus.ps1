@@ -24,23 +24,28 @@
             }
         }
 
-        $MsolUserList | ForEach-Object {
-            $PerUserMFAState = if ($_.StrongAuthenticationRequirements) {
+		$MsolUserList | ForEach-Object {
+            $AccountEnabled = $_.BlockCredential -eq $false
+            $PerUserMFAState = if ($AccountEnabled -and $_.StrongAuthenticationRequirements) {
                 $_.StrongAuthenticationRequirements.State
-            } else {
+            } elseif ($AccountEnabled) {
                 'Disabled'
+            } else {
+                'Account Disabled'
             }
 
-            $MethodType = $_.StrongAuthenticationMethods | Where-Object {
-                $_.IsDefault -eq $true
-            } | Select-Object -ExpandProperty MethodType
+            $MethodType = if ($AccountEnabled) {
+                $_.StrongAuthenticationMethods | Where-Object {
+                    $_.IsDefault -eq $true
+                } | Select-Object -ExpandProperty MethodType
+            }
 
             $DefaultMethodType = switch ($MethodType) {
                 'OneWaySMS' { 'SMS Text Message' }
                 'TwoWayVoiceMobile' { 'Call to Phone' }
                 'PhoneAppOTP' { 'TOTP' }
                 'PhoneAppNotification' { 'Authenticator App' }
-                Default { 'Not Enabled' }
+                Default { if ($AccountEnabled) { 'Not Enabled' } else { 'Account Disabled' } }
             }
 
             [PSCustomObject]@{
@@ -48,6 +53,7 @@
                 DisplayName = $_.DisplayName
                 PerUserMFAState = $PerUserMFAState
                 DefaultMethodType = $DefaultMethodType
+                AccountEnabled = $AccountEnabled
             }
         } | Export-Csv -Path "PerUserMFAStatus.csv" -NoTypeInformation -Force
     }
