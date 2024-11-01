@@ -10,12 +10,16 @@
 .PARAMETER DaysOld
     The minimum age in days for directories to be considered for archiving. Defaults to 180.
 
-.PARAMETER 7zPath
+.PARAMETER SevenZipPath
     The path to the 7-Zip executable. Defaults to standard installation location.
 
 .EXAMPLE
     .\Archive-OldDirectories.ps1
     Archives all directories older than 180 days in the current location.
+
+.EXAMPLE
+    .\Archive-OldDirectories.ps1 -DaysOld 92
+    Archives all directories older than 92 days in the current location.
 
 .NOTES
     Requires 7-Zip to be installed on the system.
@@ -24,8 +28,11 @@
 
 [CmdletBinding()]
 param (
+    [Parameter(Position = 0)]
     [int]$DaysOld = 180,
-    [string]$7zPath = "C:\Program Files\7-Zip\7z.exe"
+    
+    [Parameter(Position = 1)]
+    [string]$SevenZipPath = "C:\Program Files\7-Zip\7z.exe"
 )
 
 # Import common functions
@@ -48,11 +55,11 @@ function Write-LogMessage {
 
 function Test-7ZipInstallation {
     param (
-        [string]$7zPath
+        [string]$SevenZipPath
     )
     
-    if (-not (Test-Path $7zPath)) {
-        Write-LogMessage "7-Zip not found at: $7zPath" -Type "Error"
+    if (-not (Test-Path $SevenZipPath)) {
+        Write-LogMessage "7-Zip not found at: $SevenZipPath" -Type "Error"
         Write-LogMessage "Please install 7-Zip or update the path in the script." -Type "Error"
         return $false
     }
@@ -66,15 +73,15 @@ function Get-OldDirectories {
     
     $cutoffDate = (Get-Date).AddDays(-$DaysOld)
     $oldDirectories = Get-ChildItem -Directory | 
-    Where-Object { $_.LastWriteTime -lt $cutoffDate }
+        Where-Object { $_.LastWriteTime -lt $cutoffDate }
     
     Write-LogMessage "Found $($oldDirectories.Count) directories older than $DaysOld days"
     
     if ($oldDirectories.Count -gt 0) {
         $oldDirectories | 
-        Select-Object FullName, LastWriteTimeUtc | 
-        Sort-Object LastWriteTimeUtc | 
-        Format-Table
+            Select-Object FullName, LastWriteTimeUtc | 
+            Sort-Object LastWriteTimeUtc | 
+            Format-Table
     }
     
     return $oldDirectories
@@ -84,11 +91,11 @@ function Compress-Directory {
     param (
         [string]$SourcePath,
         [string]$ArchivePath,
-        [string]$7zPath
+        [string]$SevenZipPath
     )
     
     $arguments = @(
-        "a"              # Add to archive
+        "a"             # Add to archive
         "-t7z"          # Use 7z format
         "-mx=5"         # Compression level 5
         "-mmt=on"       # Enable multithreading
@@ -97,7 +104,7 @@ function Compress-Directory {
         "`"$SourcePath\*`""
     )
     
-    $process = Start-Process -FilePath $7zPath -ArgumentList $arguments -NoNewWindow -Wait -PassThru
+    $process = Start-Process -FilePath $SevenZipPath -ArgumentList $arguments -NoNewWindow -Wait -PassThru
     return $process.ExitCode
 }
 
@@ -120,11 +127,11 @@ function Remove-OriginalDirectory {
 
 function Start-ArchivingProcess {
     param (
-        [string]$7zPath,
+        [string]$SevenZipPath,
         [int]$DaysOld
     )
     
-    if (-not (Test-7ZipInstallation -7zPath $7zPath)) {
+    if (-not (Test-7ZipInstallation -SevenZipPath $SevenZipPath)) {
         exit 1
     }
     
@@ -139,7 +146,7 @@ function Start-ArchivingProcess {
             Write-LogMessage "Processing: $($directory.FullName)"
             $archivePath = "$($directory.FullName).7z"
             
-            $exitCode = Compress-Directory -SourcePath $directory.FullName -ArchivePath $archivePath -7zPath $7zPath
+            $exitCode = Compress-Directory -SourcePath $directory.FullName -ArchivePath $archivePath -SevenZipPath $SevenZipPath
             
             if ($exitCode -eq 0) {
                 Write-LogMessage "Successfully compressed directory: $($directory.FullName)" -Type "Success"
@@ -157,7 +164,7 @@ function Start-ArchivingProcess {
 }
 
 try {
-    Start-ArchivingProcess -7zPath $7zPath -DaysOld $DaysOld
+    Start-ArchivingProcess -SevenZipPath $SevenZipPath -DaysOld $DaysOld
 }
 catch {
     Write-LogMessage "Critical error occurred: $($_.Exception.Message)" -Type "Error"
