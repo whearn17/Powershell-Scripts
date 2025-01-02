@@ -116,7 +116,6 @@ function Remove-OriginalDirectory {
     
     if (Test-Path $ArchivePath) {
         $archiveInfo = Get-Item $ArchivePath
-        $directoryInfo = Get-Item $DirectoryPath
         if ($archiveInfo.Length -eq 0) {
             Write-LogMessage "Archive file is empty - skipping directory removal: $ArchivePath" -Type "Error"
             return $false
